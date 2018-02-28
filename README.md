@@ -1,6 +1,45 @@
-# protool
+# protool 
 
-A tool for dealing with provisioning profiles
+A tool for dealing with provisioning profiles.
+
+What can it do? 
+
+* Read profiles as XML or as a dictionary
+* Read the values from the profile
+* Diff two profiles to see what has changed
+
+### Installation
+
+    pip install protool
+
+### Examples:
+
+    import protool
+    profile = protool.ProvisioningProfile("/path/to/profile")
+
+    # Get the diff of two profiles
+    diff = protool.diff("/path/to/first", "/path/to/second", tool_override="diff")
+
+    # Get the UUID of a profile
+    print profile.uuid
+
+    # Get the full XML of the profile
+    print profile.xml
+
+    # Get the parsed contents of the profile as a dictionary
+    print profile.contents()
+
+
+Alternatively, from the command line:
+
+    # Get the diff
+    protool diff --profiles /path/to/profile1 /path/to/profile2 --tool diff
+
+    # Get the UUID of a profile
+    protool read --profile /path/to/profile --key UUID
+
+    # Get the raw XML (identical to using `security cms -D -i /path/to/profile`)
+    protool decode --profile /path/to/profile
 
 
 # Contributing
