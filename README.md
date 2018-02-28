@@ -1,6 +1,17 @@
-# protool
+# protool 
 
-A tool for dealing with provisioning profiles
+A tool for dealing with provisioning profiles 
+
+### Installation
+
+    pip install protool
+
+### Examples:
+
+    import protool
+
+
+Alternatively, from the command line:
 
 
 # Contributing
