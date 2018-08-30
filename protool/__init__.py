@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 """A utility for dealing with provisioning profiles"""
 
@@ -11,7 +11,7 @@ import tempfile
 
 import biplist
 
-__version__ = '0.1'
+__version__ = '0.2'
 
 
 class ProvisioningProfile(object):
@@ -146,5 +146,5 @@ def decode(profile_path, xml=True):
 
 
 if __name__ == "__main__":
-    print "This should only be used as a module."
+    print("This should only be used as a module.")
     sys.exit(1)

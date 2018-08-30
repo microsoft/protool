@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from os import path
 
@@ -36,8 +36,8 @@ def run_setup():
             'Environment :: Console',
             'Environment :: MacOS X',
             'Intended Audience :: Developers',
-            'Programming Language :: Python :: 2',
-            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.7',
             'Topic :: Software Development',
             'Topic :: Utilities'
         ],
