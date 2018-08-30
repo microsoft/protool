@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 """A utility for dealing with provisioning profiles"""
 
@@ -146,5 +146,5 @@ def decode(profile_path, xml=True):
 
 
 if __name__ == "__main__":
-    print "This should only be used as a module."
+    print("This should only be used as a module.")
     sys.exit(1)

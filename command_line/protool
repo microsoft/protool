@@ -1,6 +1,4 @@
-#!/usr/bin/env python2
-
-from __future__ import print_function
+#!/usr/bin/env python3
 
 import argparse
 import json
@@ -28,7 +26,7 @@ def _handle_read(args):
     """Handle the read sub command."""
 
     value = protool.value_for_key(args.profile, args.key)
-    regular_types = [str, int, float, long]
+    regular_types = [str, int, float]
     found_supported_type = False
 
     for regular_type in regular_types:
@@ -75,6 +73,12 @@ def _handle_arguments():
     decode_parser.set_defaults(subcommand="decode")
 
     args = parser.parse_args()
+
+    try:
+        _ = args.subcommand
+    except:
+        parser.print_help()
+        sys.exit(1)
 
     if args.subcommand == "diff":
         _handle_diff(args)
