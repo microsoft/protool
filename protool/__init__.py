@@ -4,14 +4,13 @@
 
 import copy
 import os
+import plistlib
 import shutil
 import subprocess
 import sys
 import tempfile
 
-import biplist
-
-__version__ = '0.2'
+__version__ = '0.3'
 
 
 class ProvisioningProfile(object):
@@ -57,7 +56,7 @@ class ProvisioningProfile(object):
 
     def _load_contents_dict(self):
         """Return the contents of a provisioning profile."""
-        self._contents = biplist.readPlistFromString(self.xml)
+        self._contents = plistlib.loads(self.xml.encode())
 
 
 def diff(a_path, b_path, ignore_keys=None, tool_override=None):
@@ -88,8 +87,8 @@ def diff(a_path, b_path, ignore_keys=None, tool_override=None):
             except:
                 pass
 
-        a_xml = biplist.writePlistToString(a_dict, binary=False)
-        b_xml = biplist.writePlistToString(b_dict, binary=False)
+        a_xml = plistlib.dumps(a_dict)
+        b_xml = plistlib.dumps(b_dict)
 
     temp_dir = tempfile.mkdtemp()
 
