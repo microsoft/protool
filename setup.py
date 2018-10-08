@@ -29,7 +29,6 @@ def run_setup():
         license='MIT',
         scripts=['command_line/protool'],
         install_requires=[
-          'biplist'
         ],
         classifiers=[
             'Development Status :: 3 - Alpha',
