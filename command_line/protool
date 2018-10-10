@@ -19,13 +19,20 @@ def _handle_diff(args):
         print("Expected 2 profiles for diff command")
         sys.exit(1)
 
-    print(protool.diff(args.profiles[0], args.profiles[1], ignore_keys=args.ignore, tool_override=args.tool))
+    try:
+        print(protool.diff(args.profiles[0], args.profiles[1], ignore_keys=args.ignore, tool_override=args.tool))
+    except Exception as ex:
+        print(f"Could not diff: {ex}", file=sys.stderr)
 
 
 def _handle_read(args):
     """Handle the read sub command."""
 
-    value = protool.value_for_key(args.profile, args.key)
+    try:
+        value = protool.value_for_key(args.profile, args.key)
+    except Exception as ex:
+        print(f"Could not read file: {ex}", file=sys.stderr)
+
     regular_types = [str, int, float]
     found_supported_type = False
 
@@ -39,7 +46,7 @@ def _handle_read(args):
         try:
             result = json.dumps(value)
         except:
-            print("Unable to serialize values. Please use the XML format instead.")
+            print("Unable to serialize values. Please use the XML format instead.", file=sys.stderr)
             sys.exit(1)
 
         print(result)
@@ -47,7 +54,10 @@ def _handle_read(args):
 
 def _handle_decode(args):
     """Handle the decode sub command."""
-    print(protool.decode(args.profile))
+    try:
+        print(protool.decode(args.profile))
+    except Exception as ex:
+        print(f"Could not decode: {ex}", file=sys.stderr)
 
 
 def _handle_arguments():

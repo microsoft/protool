@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 
-__version__ = '0.4'
+__version__ = '0.5'
 
 
 class ProvisioningProfile(object):
@@ -47,7 +47,10 @@ class ProvisioningProfile(object):
 
     def _load_xml(self):
         """Load the XML contents of a provisioning profile."""
-        security_cmd = 'security cms -D -i "%s" 2> /dev/null' % self.file_path
+        if not os.path.exists(self.file_path):
+            raise Exception(f"File does not exist: {self.file_path}")
+
+        security_cmd = f'security cms -D -i "{self.file_path}" 2> /dev/null'
         self.xml = subprocess.check_output(
             security_cmd,
             universal_newlines=True,
