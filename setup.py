@@ -23,6 +23,7 @@ def run_setup():
         version=protool.__version__,
         description='A tool for dealing with provisioning profiles',
         long_description=long_description,
+        long_description_content_type="text/markdown",
         url='https://github.com/Microsoft/protool',
         author='Dale Myers',
         author_email='dalemy@microsoft.com',
