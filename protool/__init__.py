@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 
-__version__ = '0.6'
+__version__ = '0.7'
 
 
 class ProvisioningProfile(object):
