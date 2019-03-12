@@ -25,6 +25,15 @@ def _handle_diff(args):
         print(f"Could not diff: {ex}", file=sys.stderr)
 
 
+def _handle_git_diff(args):
+    """Handle the gitdiff sub command."""
+
+    try:
+        print(protool.diff(args.git_args[1], args.git_args[4], ignore_keys=args.ignore, tool_override=args.tool))
+    except Exception as ex:
+        print(f"Could not diff: {ex}", file=sys.stderr)
+
+
 def _handle_read(args):
     """Handle the read sub command."""
 
@@ -63,6 +72,8 @@ def _handle_decode(args):
 def _handle_arguments():
     """Handle command line arguments and call the correct method."""
 
+    print(sys.argv)
+
     parser = argparse.ArgumentParser()
 
     subparsers = parser.add_subparsers()
@@ -72,6 +83,12 @@ def _handle_arguments():
     diff_parser.add_argument("-t", "--tool", dest="tool", action="store", default=None, help='Specify a diff command to use. It should take two file paths as the final two arguments. Defaults to opendiff')
     diff_parser.add_argument("-p", "--profiles", dest="profiles", action="store", nargs=2, required=True, help='The two profiles to diff')
     diff_parser.set_defaults(subcommand="diff")
+
+    diff_parser = subparsers.add_parser('gitdiff', help="Perform a diff between two profiles with the git diff parameters")
+    diff_parser.add_argument("-i", "--ignore", dest="ignore", action="store", nargs='+', default=None, help='A list of keys to ignore. e.g. --ignore TimeToLive UUID')
+    diff_parser.add_argument("-t", "--tool", dest="tool", action="store", default=None, help='Specify a diff command to use. It should take two file paths as the final two arguments. Defaults to opendiff')
+    diff_parser.add_argument("-g", "--git-args", dest="git_args", action="store", nargs=7, required=True, help='The arguments from git')
+    diff_parser.set_defaults(subcommand="gitdiff")
 
     read_parser = subparsers.add_parser('read', help="Read the value from a profile using the key specified command")
     read_parser.add_argument("-p", "--profile", dest="profile", action="store", required=True, help='The profile to read the value from')
@@ -92,6 +109,8 @@ def _handle_arguments():
 
     if args.subcommand == "diff":
         _handle_diff(args)
+    elif args.subcommand == "gitdiff":
+        _handle_git_diff(args)
     elif args.subcommand == "read":
         _handle_read(args)
     elif args.subcommand == "decode":
