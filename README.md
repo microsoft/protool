@@ -1,5 +1,8 @@
 # protool 
 
+[![PyPi Version](https://img.shields.io/pypi/v/protool.svg)](https://pypi.org/project/protool/)
+[![License](https://img.shields.io/pypi/l/protool.svg)](https://github.com/Microsoft/protool/blob/master/LICENSE)
+
 A tool for dealing with provisioning profiles.
 
 What can it do? 
