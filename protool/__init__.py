@@ -62,6 +62,28 @@ class ProvisioningProfile(object):
         self._contents = plistlib.loads(self.xml.encode())
 
 
+def profiles(profiles_dir = None):
+    """Returns a list of all currently installed provisioning profiles."""
+    if profiles_dir:
+        dir_path = os.path.expanduser(profiles_dir)
+    else:
+        user_path = os.path.expanduser('~')
+        dir_path = os.path.join(user_path, 
+                                "Library", 
+                                "MobileDevice", 
+                                "Provisioning Profiles")
+        
+    profiles = []
+    for profile in os.listdir(dir_path):
+        full_path = os.path.join(dir_path, profile)
+        _, ext = os.path.splitext(full_path)
+        if ext == ".mobileprovision":
+            provisioning_profile = ProvisioningProfile(full_path)
+            profiles.append(provisioning_profile)
+
+    return profiles
+
+
 def diff(a_path, b_path, ignore_keys=None, tool_override=None):
     """Diff two provisioning profiles."""
 
