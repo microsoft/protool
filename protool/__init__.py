@@ -2,6 +2,8 @@
 
 """A utility for dealing with provisioning profiles"""
 
+from enum import Enum
+
 import copy
 import os
 import plistlib
@@ -10,7 +12,13 @@ import subprocess
 import sys
 import tempfile
 
-__version__ = '0.6'
+
+class ProvisioningType(Enum):
+    """Enum representing the type of provisioning profile."""
+    IOS_DEVELOPMENT = 1
+    APP_STORE_DISTRIBUTION = 3
+    AD_HOC_DISTRIBUTION = 5
+    ENTERPRISE_DISTRIBUTION = 7
 
 
 class ProvisioningProfile(object):
@@ -29,6 +37,17 @@ class ProvisioningProfile(object):
         """Return a copy of the content dict."""
         return copy.deepcopy(self._contents)
 
+    @property
+    def profile_type(self):
+        if self.provisions_all_devices:
+            return ProvisioningType.ENTERPRISE_DISTRIBUTION
+        elif not self.entitlements.get("get-task-allow") and self.provisioned_devices:
+            return ProvisioningType.AD_HOC_DISTRIBUTION
+        elif not self.entitlements.get("get-task-allow") and not self.provisioned_devices:
+            return ProvisioningType.APP_STORE_DISTRIBUTION
+        elif self.entitlements.get("get-task-allow") and self.provisioned_devices:
+            return ProvisioningType.IOS_DEVELOPMENT
+
     def _parse_contents(self):
         """Parse the contents of the profile."""
         self.app_id_name = self._contents.get("AppIDName")
@@ -44,6 +63,8 @@ class ProvisioningProfile(object):
         self.time_to_live = self._contents.get("TimeToLive")
         self.uuid = self._contents.get("UUID")
         self.version = self._contents.get("Version")
+        self.provisioned_devices = self._contents.get("ProvisionedDevices")
+        self.provisions_all_devices = True if self._contents.get("ProvisionsAllDevices") else False
 
     def _load_xml(self):
         """Load the XML contents of a provisioning profile."""
@@ -60,6 +81,28 @@ class ProvisioningProfile(object):
     def _load_contents_dict(self):
         """Return the contents of a provisioning profile."""
         self._contents = plistlib.loads(self.xml.encode())
+
+
+def profiles(profiles_dir = None):
+    """Returns a list of all currently installed provisioning profiles."""
+    if profiles_dir:
+        dir_path = os.path.expanduser(profiles_dir)
+    else:
+        user_path = os.path.expanduser('~')
+        dir_path = os.path.join(user_path, 
+                                "Library", 
+                                "MobileDevice", 
+                                "Provisioning Profiles")
+        
+    profiles = []
+    for profile in os.listdir(dir_path):
+        full_path = os.path.join(dir_path, profile)
+        _, ext = os.path.splitext(full_path)
+        if ext == ".mobileprovision":
+            provisioning_profile = ProvisioningProfile(full_path)
+            profiles.append(provisioning_profile)
+
+    return profiles
 
 
 def diff(a_path, b_path, ignore_keys=None, tool_override=None):
