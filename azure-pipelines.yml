@@ -33,14 +33,12 @@ jobs:
       source bin/activate
       python -m pylint --rcfile=pylintrc protool
       python -m pylint --rcfile=pylintrc tests
-
     displayName: 'Lint'
 
   - script: |
       source bin/activate
       python -m mypy --ignore-missing-imports protool/
       python -m mypy --ignore-missing-imports tests/
-
     displayName: 'Type Check'
 
   - script: |
@@ -52,7 +50,7 @@ jobs:
       source bin/activate
       python inlinecss.py htmlcov
     displayName: 'Inline CSS'
-      
+
   - task: PublishTestResults@2
     inputs:
       testResultsFiles: '**/test-results.xml'
