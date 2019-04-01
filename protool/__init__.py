@@ -12,8 +12,6 @@ import subprocess
 import sys
 import tempfile
 
-__version__ = '0.7'
-
 
 class ProvisioningType(Enum):
     """Enum representing the type of provisioning profile."""

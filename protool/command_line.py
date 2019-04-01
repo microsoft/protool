@@ -5,11 +5,7 @@ import json
 import os
 import sys
 
-try:
-    import protool
-except:
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "..")))
-    import protool
+import protool
 
 
 def _handle_diff(args):
@@ -116,6 +112,8 @@ def _handle_arguments():
     elif args.subcommand == "decode":
         _handle_decode(args)
 
+def run():
+    _handle_arguments()
 
 if __name__ == "__main__":
     _handle_arguments()
