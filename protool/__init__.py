@@ -5,12 +5,14 @@
 from enum import Enum
 
 import copy
+import datetime
 import os
 import plistlib
 import shutil
 import subprocess
 import sys
 import tempfile
+from typing import Any, Dict, List, Optional
 
 
 class ProvisioningType(Enum):
@@ -21,41 +23,71 @@ class ProvisioningType(Enum):
     ENTERPRISE_DISTRIBUTION = 7
 
 
-class ProvisioningProfile(object):
+#pylint: disable=too-many-instance-attributes
+class ProvisioningProfile:
     """Represents a provisioning profile."""
 
-    def __init__(self, file_path):
+    file_path: str
+    file_name: str
+    xml: str
+    _contents: Dict[str, Any]
+
+    app_id_name: Optional[str]
+    application_identifier_prefix: Optional[str]
+    creation_date: Optional[datetime.datetime]
+    platform: Optional[List[str]]
+    developer_certificates: Optional[List[bytes]]
+    entitlements: Dict[str, Any]
+    expiration_date: Optional[datetime.datetime]
+    name: Optional[str]
+    team_identifier: Optional[List[str]]
+    team_name: Optional[str]
+    time_to_live: Optional[int]
+    uuid: Optional[str]
+    version: Optional[int]
+    provisioned_devices: Optional[List[str]]
+    provisions_all_devices: Optional[bool]
+
+    @property
+    def profile_type(self) -> ProvisioningType:
+        """Determine the profile type from the various values in the profile."""
+        if self.provisions_all_devices:
+            return ProvisioningType.ENTERPRISE_DISTRIBUTION
+
+        if not self.entitlements.get("get-task-allow") and self.provisioned_devices:
+            return ProvisioningType.AD_HOC_DISTRIBUTION
+
+        if not self.entitlements.get("get-task-allow") and not self.provisioned_devices:
+            return ProvisioningType.APP_STORE_DISTRIBUTION
+
+        if self.entitlements.get("get-task-allow") and self.provisioned_devices:
+            return ProvisioningType.IOS_DEVELOPMENT
+
+        raise Exception("Unable to determine provisioning profile type")
+
+    def __init__(self, file_path: str) -> None:
         self.file_path = os.path.abspath(file_path)
         self.file_name = os.path.basename(self.file_path)
-        self.xml = None
-        self._contents = None
-        self._load_xml()
-        self._load_contents_dict()
+        self.load_from_disk()
+
+    def load_from_disk(self) -> None:
+        """Load the provisioning profile details from disk and parse them."""
+        self.xml = self._get_xml()
+        self._contents = plistlib.loads(self.xml.encode())
         self._parse_contents()
 
-    def contents(self):
+    def contents(self) -> Dict[str, Any]:
         """Return a copy of the content dict."""
         return copy.deepcopy(self._contents)
 
-    @property
-    def profile_type(self):
-        if self.provisions_all_devices:
-            return ProvisioningType.ENTERPRISE_DISTRIBUTION
-        elif not self.entitlements.get("get-task-allow") and self.provisioned_devices:
-            return ProvisioningType.AD_HOC_DISTRIBUTION
-        elif not self.entitlements.get("get-task-allow") and not self.provisioned_devices:
-            return ProvisioningType.APP_STORE_DISTRIBUTION
-        elif self.entitlements.get("get-task-allow") and self.provisioned_devices:
-            return ProvisioningType.IOS_DEVELOPMENT
-
-    def _parse_contents(self):
+    def _parse_contents(self) -> None:
         """Parse the contents of the profile."""
         self.app_id_name = self._contents.get("AppIDName")
         self.application_identifier_prefix = self._contents.get("ApplicationIdentifierPrefix")
         self.creation_date = self._contents.get("CreationDate")
         self.platform = self._contents.get("Platform")
         self.developer_certificates = self._contents.get("DeveloperCertificates")
-        self.entitlements = self._contents.get("Entitlements")
+        self.entitlements = self._contents.get("Entitlements", {})
         self.expiration_date = self._contents.get("ExpirationDate")
         self.name = self._contents.get("Name")
         self.team_identifier = self._contents.get("TeamIdentifier")
@@ -64,49 +96,48 @@ class ProvisioningProfile(object):
         self.uuid = self._contents.get("UUID")
         self.version = self._contents.get("Version")
         self.provisioned_devices = self._contents.get("ProvisionedDevices")
-        self.provisions_all_devices = True if self._contents.get("ProvisionsAllDevices") else False
+        self.provisions_all_devices = self._contents.get("ProvisionsAllDevices", False)
 
-    def _load_xml(self):
+    def _get_xml(self) -> str:
         """Load the XML contents of a provisioning profile."""
         if not os.path.exists(self.file_path):
             raise Exception(f"File does not exist: {self.file_path}")
 
         security_cmd = f'security cms -D -i "{self.file_path}" 2> /dev/null'
-        self.xml = subprocess.check_output(
+        return subprocess.check_output(
             security_cmd,
             universal_newlines=True,
             shell=True
         ).strip()
-
-    def _load_contents_dict(self):
-        """Return the contents of a provisioning profile."""
-        self._contents = plistlib.loads(self.xml.encode())
+#pylint: enable=too-many-instance-attributes
 
 
-def profiles(profiles_dir = None):
+def profiles(profiles_dir: Optional[str] = None) -> List[ProvisioningProfile]:
     """Returns a list of all currently installed provisioning profiles."""
     if profiles_dir:
         dir_path = os.path.expanduser(profiles_dir)
     else:
         user_path = os.path.expanduser('~')
-        dir_path = os.path.join(user_path, 
-                                "Library", 
-                                "MobileDevice", 
+        dir_path = os.path.join(user_path,
+                                "Library",
+                                "MobileDevice",
                                 "Provisioning Profiles")
-        
-    profiles = []
+
+    all_profiles = []
     for profile in os.listdir(dir_path):
         full_path = os.path.join(dir_path, profile)
         _, ext = os.path.splitext(full_path)
         if ext == ".mobileprovision":
             provisioning_profile = ProvisioningProfile(full_path)
-            profiles.append(provisioning_profile)
+            all_profiles.append(provisioning_profile)
 
-    return profiles
+    return all_profiles
 
 
-def diff(a_path, b_path, ignore_keys=None, tool_override=None):
+def diff(a_path: str, b_path: str, ignore_keys: Optional[List[str]] = None, tool_override: Optional[str] = None) -> str:
     """Diff two provisioning profiles."""
+
+    #pylint: disable=too-many-locals
 
     if tool_override is None:
         diff_tool = "opendiff"
@@ -126,15 +157,15 @@ def diff(a_path, b_path, ignore_keys=None, tool_override=None):
         for key in ignore_keys:
             try:
                 del a_dict[key]
-            except:
+            except KeyError:
                 pass
             try:
                 del b_dict[key]
-            except:
+            except KeyError:
                 pass
 
-        a_xml = plistlib.dumps(a_dict)
-        b_xml = plistlib.dumps(b_dict)
+        a_xml = plistlib.dumps(a_dict).decode("utf-8")
+        b_xml = plistlib.dumps(b_dict).decode("utf-8")
 
     temp_dir = tempfile.mkdtemp()
 
@@ -167,7 +198,7 @@ def diff(a_path, b_path, ignore_keys=None, tool_override=None):
     return diff_contents
 
 
-def value_for_key(profile_path, key):
+def value_for_key(profile_path: str, key: str) -> Optional[Any]:
     """Return the value for a given key"""
 
     profile = ProvisioningProfile(profile_path)
@@ -179,15 +210,15 @@ def value_for_key(profile_path, key):
         return None
 
 
-def decode(profile_path, xml=True):
+def decode(profile_path: str, xml: bool = True):
     """Decode a profile, returning as a dictionary if xml is set to False."""
 
     profile = ProvisioningProfile(profile_path)
 
     if xml:
         return profile.xml
-    else:
-        return profile.contents()
+
+    return profile.contents()
 
 
 if __name__ == "__main__":

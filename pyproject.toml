@@ -34,8 +34,8 @@ protool = 'protool:command_line.run'
 python = "^3.5"
 
 [tool.poetry.dev-dependencies]
-mypy = "=0.641"
-pylint = "=2.1.1"
+mypy = "=0.670"
+pylint = "=2.3.1"
 pytest = "=4.0.1"
 pytest-cov = "=2.6.0"
 
