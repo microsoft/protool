@@ -68,8 +68,6 @@ def _handle_decode(args):
 def _handle_arguments():
     """Handle command line arguments and call the correct method."""
 
-    print(sys.argv)
-
     parser = argparse.ArgumentParser()
 
     subparsers = parser.add_subparsers()
