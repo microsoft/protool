@@ -31,7 +31,7 @@ classifiers = [
 protool = 'protool:command_line.run'
 
 [tool.poetry.dependencies]
-python = "^3.5"
+python = "^3.6"
 
 [tool.poetry.dev-dependencies]
 mypy = "=0.670"
