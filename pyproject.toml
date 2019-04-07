@@ -32,6 +32,7 @@ protool = 'protool:command_line.run'
 
 [tool.poetry.dependencies]
 python = "^3.6"
+pyOpenSSL ="^19.0.0"
 
 [tool.poetry.dev-dependencies]
 mypy = "=0.670"

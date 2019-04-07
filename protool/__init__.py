@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 from typing import Any, Dict, List, Optional
+from OpenSSL.crypto import FILETYPE_ASN1, load_certificate, x509
 
 
 class ProvisioningType(Enum):
@@ -21,6 +22,26 @@ class ProvisioningType(Enum):
     APP_STORE_DISTRIBUTION = 3
     AD_HOC_DISTRIBUTION = 5
     ENTERPRISE_DISTRIBUTION = 7
+
+
+class Certificate:
+    """Represents a certificate attached to a provisioning profile. Currently wraps PyOpenSSL x509 objects.
+    Review https://pyopenssl.org/en/stable/api/crypto.html#x509-objects to make use of additional functionality.
+    """
+    x509: x509
+
+    def __init__ (self, cert_body_string: str):
+        self.x509 = load_certificate(FILETYPE_ASN1, cert_body_string)
+
+    @property 
+    def sha1(self) -> str:
+        """The certificates sha1 hash."""
+        return self.x509.digest('sha1').decode().replace(":", "")
+
+    @property
+    def is_expired(self) -> bool:
+        """Returns True if the certificate has expired, False if not expired."""
+        return self.x509.has_expired()
 
 
 #pylint: disable=too-many-instance-attributes
@@ -36,7 +57,6 @@ class ProvisioningProfile:
     application_identifier_prefix: Optional[str]
     creation_date: Optional[datetime.datetime]
     platform: Optional[List[str]]
-    developer_certificates: Optional[List[bytes]]
     entitlements: Dict[str, Any]
     expiration_date: Optional[datetime.datetime]
     name: Optional[str]
@@ -65,6 +85,19 @@ class ProvisioningProfile:
 
         raise Exception("Unable to determine provisioning profile type")
 
+    @property
+    def developer_certificates(self) -> [Certificate]:
+        """Returns developer certificates as a list of PyOpenSSL X509""" 
+        dev_certs = []
+        for item in self._contents.get("DeveloperCertificates"):
+            try:
+                certificate = Certificate(item)
+                dev_certs.append(certificate)
+            except Exception as cert_exception:
+                print(f"Could not load certificate due to an error: {cert_exception}")
+
+        return dev_certs
+
     def __init__(self, file_path: str) -> None:
         self.file_path = os.path.abspath(file_path)
         self.file_name = os.path.basename(self.file_path)
@@ -86,7 +119,6 @@ class ProvisioningProfile:
         self.application_identifier_prefix = self._contents.get("ApplicationIdentifierPrefix")
         self.creation_date = self._contents.get("CreationDate")
         self.platform = self._contents.get("Platform")
-        self.developer_certificates = self._contents.get("DeveloperCertificates")
         self.entitlements = self._contents.get("Entitlements", {})
         self.expiration_date = self._contents.get("ExpirationDate")
         self.name = self._contents.get("Name")
