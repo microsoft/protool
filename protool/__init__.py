@@ -65,16 +65,10 @@ class ProvisioningProfile:
 
         raise Exception("Unable to determine provisioning profile type")
 
-    @property
     def developer_certificates(self) -> List[OpenSSL.crypto.X509]:
         """Returns developer certificates as a list of PyOpenSSL X509."""
         dev_certs: List[OpenSSL.crypto.X509] = []
-        raw_cert_items: List[str] = cast(List[str], self._contents.get("DeveloperCertificates"))
-
-        try:
-            iter(raw_cert_items)
-        except TypeError as _:
-            return []
+        raw_cert_items: List[str] = cast(List[str], self._contents.get("DeveloperCertificates", []))
 
         for cert_item in raw_cert_items:
             loaded_cert: OpenSSL.crypto.X509 \
