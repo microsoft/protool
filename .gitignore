@@ -1,7 +1,13 @@
+.coverage
 .DS_Store
+.mypy_cache/*
 *.egg-info/*
 *.pyc
 bin/*
+coverage.xml
 dist/*
+htmlcov/*
+junit/*
 lib/*
+poetry.lock
 pyvenv.cfg

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "protool"
-version = "0.7.0"
+version = "0.8.0"
 description = "A tool for dealing with provisioning profiles"
 
 license = "MIT"
@@ -31,11 +31,12 @@ classifiers = [
 protool = 'protool:command_line.run'
 
 [tool.poetry.dependencies]
-python = "^3.5"
+python = "^3.6"
+pyOpenSSL ="^19.0.0"
 
 [tool.poetry.dev-dependencies]
-mypy = "=0.641"
-pylint = "=2.1.1"
+mypy = "=0.670"
+pylint = "=2.3.1"
 pytest = "=4.0.1"
 pytest-cov = "=2.6.0"
 
