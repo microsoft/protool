@@ -12,7 +12,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Any, Dict, List, Optional
+from typing import Any, cast, Dict, Iterable, List, Optional
+import OpenSSL
 
 
 class ProvisioningType(Enum):
@@ -36,7 +37,6 @@ class ProvisioningProfile:
     application_identifier_prefix: Optional[str]
     creation_date: Optional[datetime.datetime]
     platform: Optional[List[str]]
-    developer_certificates: Optional[List[bytes]]
     entitlements: Dict[str, Any]
     expiration_date: Optional[datetime.datetime]
     name: Optional[str]
@@ -65,6 +65,18 @@ class ProvisioningProfile:
 
         raise Exception("Unable to determine provisioning profile type")
 
+    def developer_certificates(self) -> List[OpenSSL.crypto.X509]:
+        """Returns developer certificates as a list of PyOpenSSL X509."""
+        dev_certs: List[OpenSSL.crypto.X509] = []
+        raw_cert_items: List[str] = cast(List[str], self._contents.get("DeveloperCertificates", []))
+
+        for cert_item in raw_cert_items:
+            loaded_cert: OpenSSL.crypto.X509 \
+                = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, cert_item)
+            dev_certs.append(loaded_cert)
+
+        return dev_certs
+
     def __init__(self, file_path: str) -> None:
         self.file_path = os.path.abspath(file_path)
         self.file_name = os.path.basename(self.file_path)
@@ -86,7 +98,6 @@ class ProvisioningProfile:
         self.application_identifier_prefix = self._contents.get("ApplicationIdentifierPrefix")
         self.creation_date = self._contents.get("CreationDate")
         self.platform = self._contents.get("Platform")
-        self.developer_certificates = self._contents.get("DeveloperCertificates")
         self.entitlements = self._contents.get("Entitlements", {})
         self.expiration_date = self._contents.get("ExpirationDate")
         self.name = self._contents.get("Name")
