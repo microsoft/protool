@@ -44,6 +44,11 @@ Alternatively, from the command line:
     # Get the raw XML (identical to using `security cms -D -i /path/to/profile`)
     protool decode --profile /path/to/profile
 
+    # Get the file paths of all .mobileprovision files on the machine with a bundle id that start 
+    # with com.microsoft and that represent ios development provisioning files
+    protool search --appid com.microsoft.* --type ios-dev
+
+
 
 # Contributing
 

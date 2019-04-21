@@ -5,9 +5,15 @@
 import argparse
 import json
 import sys
+import re
 
 import protool
 
+PROV_TYPE_MAPPINGS = \
+{"ios-dev": protool.ProvisioningType.IOS_DEVELOPMENT, \
+  "appstore": protool.ProvisioningType.APP_STORE_DISTRIBUTION, \
+  "enterprise": protool.ProvisioningType.ENTERPRISE_DISTRIBUTION, \
+  "adhoc": protool.ProvisioningType.AD_HOC_DISTRIBUTION}
 
 def _handle_diff(args: argparse.Namespace) -> int:
     """Handle the diff sub command."""
@@ -73,6 +79,30 @@ def _handle_decode(args: argparse.Namespace) -> int:
         print(protool.decode(args.profile))
     except Exception as ex:
         print(f"Could not decode: {ex}", file=sys.stderr)
+        return 1
+
+    return 0
+
+def _handle_search(args: argparse.Namespace) -> int:
+    """Handle the search sub command."""
+    try:
+        prov_types_set = set()
+        if "all" in args.profile_types:
+            prov_types_set.update(PROV_TYPE_MAPPINGS.values())
+        else:
+            selected_prov_types = {PROV_TYPE_MAPPINGS[key] for key in PROV_TYPE_MAPPINGS if key in args.profile_types}
+            prov_types_set.update(selected_prov_types)
+
+        for profile in protool.profiles():
+            app_prefix = profile.application_identifier_prefix[0]
+            prefixed_app_id = profile.entitlements["application-identifier"]
+            app_id_noprefix = re.sub(app_prefix + r"\.(.*)", r"\1", prefixed_app_id, count=1)
+
+            if re.search(args.app_id, app_id_noprefix):
+                if profile.profile_type in prov_types_set:
+                    print(profile.file_path)
+    except Exception as ex:
+        print(f"Could not perform search: {ex}", file=sys.stderr)
         return 1
 
     return 0
@@ -192,6 +222,33 @@ def _handle_arguments() -> int:
 
     decode_parser.set_defaults(subcommand="decode")
 
+    search_parser = subparsers.add_parser('search', \
+        help="Search for a .mobileprovision file matching a given description")
+
+    search_parser.add_argument(
+        "-i",
+        "--appid",
+        dest="app_id",
+        action="store",
+        help="The exact app bundle ID to search for"
+    )
+
+    prov_types = list(PROV_TYPE_MAPPINGS.keys()) + ["all"]
+
+    search_parser.add_argument(
+        "-t",
+        "--type",
+        dest="profile_types",
+        action="store",
+        required=False,
+        help='Limits search to a provisioning profile type(s)',
+        default="all",
+        nargs="*",
+        choices=prov_types
+    )
+
+    search_parser.set_defaults(subcommand="search")
+
     args = parser.parse_args()
 
     try:
@@ -211,6 +268,9 @@ def _handle_arguments() -> int:
 
     if args.subcommand == "decode":
         return _handle_decode(args)
+
+    if args.subcommand == "search":
+        return _handle_search(args)
 
     print("Unrecognized command")
     return 1
