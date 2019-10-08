@@ -17,6 +17,7 @@ What can it do?
 
 ### Examples:
 
+```python
     import protool
     profile = protool.ProvisioningProfile("/path/to/profile")
 
@@ -24,17 +25,19 @@ What can it do?
     diff = protool.diff("/path/to/first", "/path/to/second", tool_override="diff")
 
     # Get the UUID of a profile
-    print profile.uuid
+    print(profile.uuid)
 
     # Get the full XML of the profile
-    print profile.xml
+    print(profile.xml)
 
     # Get the parsed contents of the profile as a dictionary
-    print profile.contents()
+    print(profile.contents())
+```
 
 
 Alternatively, from the command line:
 
+```bash
     # Get the diff
     protool diff --profiles /path/to/profile1 /path/to/profile2 --tool diff
 
@@ -43,6 +46,7 @@ Alternatively, from the command line:
 
     # Get the raw XML (identical to using `security cms -D -i /path/to/profile`)
     protool decode --profile /path/to/profile
+```
 
 
 # Contributing
