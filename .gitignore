@@ -11,3 +11,4 @@ junit/*
 lib/*
 poetry.lock
 pyvenv.cfg
+venv
