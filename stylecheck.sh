@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pushd "${VIRTUAL_ENV}" > /dev/null
+pushd "${VIRTUAL_ENV}/.." > /dev/null
 
 python -m pylint --rcfile=pylintrc protool
 python -m mypy --ignore-missing-imports protool/
