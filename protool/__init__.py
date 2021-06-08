@@ -18,13 +18,14 @@ import OpenSSL
 
 class ProvisioningType(Enum):
     """Enum representing the type of provisioning profile."""
+
     IOS_DEVELOPMENT = 1
     APP_STORE_DISTRIBUTION = 3
     AD_HOC_DISTRIBUTION = 5
     ENTERPRISE_DISTRIBUTION = 7
 
 
-#pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes
 class ProvisioningProfile:
     """Represents a provisioning profile."""
 
@@ -68,24 +69,31 @@ class ProvisioningProfile:
     def developer_certificates(self) -> List[OpenSSL.crypto.X509]:
         """Returns developer certificates as a list of PyOpenSSL X509."""
         dev_certs: List[OpenSSL.crypto.X509] = []
-        raw_cert_items: List[str] = cast(List[str], self._contents.get("DeveloperCertificates", []))
+        raw_cert_items: List[str] = cast(
+            List[str], self._contents.get("DeveloperCertificates", [])
+        )
 
         for cert_item in raw_cert_items:
-            loaded_cert: OpenSSL.crypto.X509 \
-                = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, cert_item)
+            loaded_cert: OpenSSL.crypto.X509 = OpenSSL.crypto.load_certificate(
+                OpenSSL.crypto.FILETYPE_ASN1, cert_item
+            )
             dev_certs.append(loaded_cert)
 
         return dev_certs
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, *, sort_keys: bool = True) -> None:
         self.file_path = os.path.abspath(file_path)
         self.file_name = os.path.basename(self.file_path)
-        self.load_from_disk()
+        self.load_from_disk(sort_keys=sort_keys)
 
-    def load_from_disk(self) -> None:
+    def load_from_disk(self, *, sort_keys: bool = True) -> None:
         """Load the provisioning profile details from disk and parse them."""
         self.xml = self._get_xml()
         self._contents = plistlib.loads(self.xml.encode())
+
+        if sort_keys:
+            self.xml = plistlib.dumps(self._contents, sort_keys=True).decode("utf-8")
+
         self._parse_contents()
 
     def contents(self) -> Dict[str, Any]:
@@ -95,7 +103,9 @@ class ProvisioningProfile:
     def _parse_contents(self) -> None:
         """Parse the contents of the profile."""
         self.app_id_name = self._contents.get("AppIDName")
-        self.application_identifier_prefix = self._contents.get("ApplicationIdentifierPrefix")
+        self.application_identifier_prefix = self._contents.get(
+            "ApplicationIdentifierPrefix"
+        )
         self.creation_date = self._contents.get("CreationDate")
         self.platform = self._contents.get("Platform")
         self.entitlements = self._contents.get("Entitlements", {})
@@ -116,11 +126,11 @@ class ProvisioningProfile:
 
         security_cmd = f'security cms -D -i "{self.file_path}" 2> /dev/null'
         return subprocess.check_output(
-            security_cmd,
-            universal_newlines=True,
-            shell=True
+            security_cmd, universal_newlines=True, shell=True
         ).strip()
-#pylint: enable=too-many-instance-attributes
+
+
+# pylint: enable=too-many-instance-attributes
 
 
 def profiles(profiles_dir: Optional[str] = None) -> List[ProvisioningProfile]:
@@ -128,11 +138,10 @@ def profiles(profiles_dir: Optional[str] = None) -> List[ProvisioningProfile]:
     if profiles_dir:
         dir_path = os.path.expanduser(profiles_dir)
     else:
-        user_path = os.path.expanduser('~')
-        dir_path = os.path.join(user_path,
-                                "Library",
-                                "MobileDevice",
-                                "Provisioning Profiles")
+        user_path = os.path.expanduser("~")
+        dir_path = os.path.join(
+            user_path, "Library", "MobileDevice", "Provisioning Profiles"
+        )
 
     all_profiles = []
     for profile in os.listdir(dir_path):
@@ -145,18 +154,25 @@ def profiles(profiles_dir: Optional[str] = None) -> List[ProvisioningProfile]:
     return all_profiles
 
 
-def diff(a_path: str, b_path: str, ignore_keys: Optional[List[str]] = None, tool_override: Optional[str] = None) -> str:
+def diff(
+    a_path: str,
+    b_path: str,
+    *,
+    sort_keys: bool = True,
+    ignore_keys: Optional[List[str]] = None,
+    tool_override: Optional[str] = None,
+) -> str:
     """Diff two provisioning profiles."""
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
 
     if tool_override is None:
         diff_tool = "opendiff"
     else:
         diff_tool = tool_override
 
-    profile_a = ProvisioningProfile(a_path)
-    profile_b = ProvisioningProfile(b_path)
+    profile_a = ProvisioningProfile(a_path, sort_keys=sort_keys)
+    profile_b = ProvisioningProfile(b_path, sort_keys=sort_keys)
 
     if ignore_keys is None:
         a_xml = profile_a.xml
@@ -183,10 +199,10 @@ def diff(a_path: str, b_path: str, ignore_keys: Optional[List[str]] = None, tool
     a_temp_path = os.path.join(temp_dir, profile_a.file_name)
     b_temp_path = os.path.join(temp_dir, profile_b.file_name)
 
-    with open(a_temp_path, 'w') as temp_profile:
+    with open(a_temp_path, "w") as temp_profile:
         temp_profile.write(a_xml)
 
-    with open(b_temp_path, 'w') as temp_profile:
+    with open(b_temp_path, "w") as temp_profile:
         temp_profile.write(b_xml)
 
     # We deliberately don't wrap the tool so that arguments work as well
@@ -194,9 +210,7 @@ def diff(a_path: str, b_path: str, ignore_keys: Optional[List[str]] = None, tool
 
     try:
         diff_contents = subprocess.check_output(
-            diff_command,
-            universal_newlines=True,
-            shell=True
+            diff_command, universal_newlines=True, shell=True
         ).strip()
     except subprocess.CalledProcessError as ex:
         # Diff tools usually return a non-0 exit code if there are differences,

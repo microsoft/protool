@@ -4,9 +4,17 @@
 
 import argparse
 import json
+import os
 import sys
 
-import protool
+try:
+    import protool
+except ImportError:
+    # Insert the package into the PATH
+    sys.path.insert(
+        0, os.path.abspath(os.path.join(os.path.abspath(__file__), "..", ".."))
+    )
+    import protool
 
 
 def _handle_diff(args: argparse.Namespace) -> int:
@@ -17,7 +25,15 @@ def _handle_diff(args: argparse.Namespace) -> int:
         return 1
 
     try:
-        print(protool.diff(args.profiles[0], args.profiles[1], ignore_keys=args.ignore, tool_override=args.tool))
+        print(
+            protool.diff(
+                args.profiles[0],
+                args.profiles[1],
+                sort_keys=not args.keep_original_order,
+                ignore_keys=args.ignore,
+                tool_override=args.tool,
+            )
+        )
     except Exception as ex:
         print(f"Could not diff: {ex}", file=sys.stderr)
         return 1
@@ -29,7 +45,15 @@ def _handle_git_diff(args: argparse.Namespace) -> int:
     """Handle the gitdiff sub command."""
 
     try:
-        print(protool.diff(args.git_args[1], args.git_args[4], ignore_keys=args.ignore, tool_override=args.tool))
+        print(
+            protool.diff(
+                args.git_args[1],
+                args.git_args[4],
+                sort_keys=not args.keep_original_order,
+                ignore_keys=args.ignore,
+                tool_override=args.tool,
+            )
+        )
     except Exception as ex:
         print(f"Could not diff: {ex}", file=sys.stderr)
         return 1
@@ -59,7 +83,10 @@ def _handle_read(args: argparse.Namespace) -> int:
         try:
             result = json.dumps(value)
         except Exception:
-            print("Unable to serialize values. Please use the XML format instead.", file=sys.stderr)
+            print(
+                "Unable to serialize values. Please use the XML format instead.",
+                file=sys.stderr,
+            )
             return 1
 
         print(result)
@@ -85,16 +112,18 @@ def _handle_arguments() -> int:
 
     subparsers = parser.add_subparsers()
 
-    diff_parser = subparsers.add_parser('diff', help="Perform a diff between two profiles")
+    diff_parser = subparsers.add_parser(
+        "diff", help="Perform a diff between two profiles"
+    )
 
     diff_parser.add_argument(
         "-i",
         "--ignore",
         dest="ignore",
         action="store",
-        nargs='+',
+        nargs="+",
         default=None,
-        help='A list of keys to ignore. e.g. --ignore TimeToLive UUID'
+        help="A list of keys to ignore. e.g. --ignore TimeToLive UUID",
     )
 
     diff_parser.add_argument(
@@ -103,7 +132,7 @@ def _handle_arguments() -> int:
         dest="tool",
         action="store",
         default=None,
-        help='Specify a diff command to use. It should take two file paths as the final two arguments. Defaults to opendiff'  #pylint: disable=line-too-long
+        help="Specify a diff command to use. It should take two file paths as the final two arguments. Defaults to opendiff",  # pylint: disable=line-too-long
     )
 
     diff_parser.add_argument(
@@ -113,14 +142,24 @@ def _handle_arguments() -> int:
         action="store",
         nargs=2,
         required=True,
-        help='The two profiles to diff'
+        help="The two profiles to diff",
+    )
+
+    diff_parser.add_argument(
+        "-k",
+        "--keep-original-order",
+        dest="keep_original_order",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Set to avoid sorting keys for diff operations",
     )
 
     diff_parser.set_defaults(subcommand="diff")
 
     gitdiff_parser = subparsers.add_parser(
-        'gitdiff',
-        help="Perform a diff between two profiles with the git diff parameters"
+        "gitdiff",
+        help="Perform a diff between two profiles with the git diff parameters",
     )
 
     gitdiff_parser.add_argument(
@@ -128,9 +167,9 @@ def _handle_arguments() -> int:
         "--ignore",
         dest="ignore",
         action="store",
-        nargs='+',
+        nargs="+",
         default=None,
-        help='A list of keys to ignore. e.g. --ignore TimeToLive UUID'
+        help="A list of keys to ignore. e.g. --ignore TimeToLive UUID",
     )
 
     gitdiff_parser.add_argument(
@@ -139,7 +178,7 @@ def _handle_arguments() -> int:
         dest="tool",
         action="store",
         default=None,
-        help='Specify a diff command to use. It should take two file paths as the final two arguments. Defaults to opendiff'  #pylint: disable=line-too-long
+        help="Specify a diff command to use. It should take two file paths as the final two arguments. Defaults to opendiff",  # pylint: disable=line-too-long
     )
 
     gitdiff_parser.add_argument(
@@ -149,12 +188,14 @@ def _handle_arguments() -> int:
         action="store",
         nargs=7,
         required=True,
-        help='The arguments from git'
+        help="The arguments from git",
     )
 
     gitdiff_parser.set_defaults(subcommand="gitdiff")
 
-    read_parser = subparsers.add_parser('read', help="Read the value from a profile using the key specified command")
+    read_parser = subparsers.add_parser(
+        "read", help="Read the value from a profile using the key specified command"
+    )
 
     read_parser.add_argument(
         "-p",
@@ -162,7 +203,7 @@ def _handle_arguments() -> int:
         dest="profile",
         action="store",
         required=True,
-        help='The profile to read the value from'
+        help="The profile to read the value from",
     )
 
     read_parser.add_argument(
@@ -171,14 +212,13 @@ def _handle_arguments() -> int:
         dest="key",
         action="store",
         required=True,
-        help='The key to read the value for'
+        help="The key to read the value for",
     )
 
     read_parser.set_defaults(subcommand="read")
 
     decode_parser = subparsers.add_parser(
-        'decode',
-        help="Decode a provisioning profile and display in a readable format"
+        "decode", help="Decode a provisioning profile and display in a readable format"
     )
 
     decode_parser.add_argument(
@@ -187,7 +227,7 @@ def _handle_arguments() -> int:
         dest="profile",
         action="store",
         required=True,
-        help='The profile to read the value from'
+        help="The profile to read the value from",
     )
 
     decode_parser.set_defaults(subcommand="decode")
@@ -215,9 +255,11 @@ def _handle_arguments() -> int:
     print("Unrecognized command")
     return 1
 
+
 def run() -> int:
     """Entry point for poetry generated command line tool."""
     return _handle_arguments()
+
 
 if __name__ == "__main__":
     sys.exit(_handle_arguments())
