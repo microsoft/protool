@@ -3,6 +3,7 @@
 """Command line handler for protool."""
 
 import argparse
+from datetime import datetime
 import json
 import os
 import sys
@@ -70,28 +71,23 @@ def _handle_read(args: argparse.Namespace) -> int:
         print(f"Could not read file: {ex}", file=sys.stderr)
         return 1
 
-    regular_types = [str, int, float]
-    found_supported_type = False
+    if type(value) in [str, int, float]:
+        print(value)
+        return 0
 
-    for regular_type in regular_types:
-        if isinstance(value, regular_type):
-            found_supported_type = True
-            print(value)
-            break
+    if isinstance(value, datetime):
+        print(value.isoformat())
+        return 0
 
-    if not found_supported_type:
-        try:
-            result = json.dumps(value)
-        except Exception:
-            print(
-                "Unable to serialize values. Please use the XML format instead.",
-                file=sys.stderr,
-            )
-            return 1
-
-        print(result)
-
-    return 0
+    try:
+        result = json.dumps(value)
+        return 0
+    except Exception:
+        print(
+            f"Unable to serialize values. Raw result: {result}",
+            file=sys.stderr,
+        )
+        return 1
 
 
 def _handle_decode(args: argparse.Namespace) -> int:
