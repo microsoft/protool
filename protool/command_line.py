@@ -81,10 +81,11 @@ def _handle_read(args: argparse.Namespace) -> int:
 
     try:
         result = json.dumps(value)
+        print(result)
         return 0
-    except Exception:
+    except Exception as ex:
         print(
-            f"Unable to serialize values. Raw result: {result}",
+            f"Unable to serialize values: {ex}",
             file=sys.stderr,
         )
         return 1
