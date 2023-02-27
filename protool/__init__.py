@@ -199,14 +199,14 @@ def diff(
     a_temp_path = os.path.join(temp_dir, profile_a.file_name)
     b_temp_path = os.path.join(temp_dir, profile_b.file_name)
 
-    with open(a_temp_path, "w") as temp_profile:
+    with open(a_temp_path, "w", encoding="utf-8") as temp_profile:
         temp_profile.write(a_xml)
 
-    with open(b_temp_path, "w") as temp_profile:
+    with open(b_temp_path, "w", encoding="utf-8") as temp_profile:
         temp_profile.write(b_xml)
 
     # We deliberately don't wrap the tool so that arguments work as well
-    diff_command = '%s "%s" "%s"' % (diff_tool, a_temp_path, b_temp_path)
+    diff_command = f'{diff_tool} "{a_temp_path}" "{b_temp_path}"'
 
     try:
         diff_contents = subprocess.check_output(
