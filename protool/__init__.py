@@ -76,7 +76,7 @@ class ProvisioningProfile:
 
         for cert_item in raw_cert_items:
             loaded_cert: OpenSSL.crypto.X509 = OpenSSL.crypto.load_certificate(
-                OpenSSL.crypto.FILETYPE_ASN1, cert_item
+                OpenSSL.crypto.FILETYPE_ASN1, cert_item.encode()
             )
             dev_certs.append(loaded_cert)
 
