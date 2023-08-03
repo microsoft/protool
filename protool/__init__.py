@@ -12,8 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Any, cast, Dict, Iterable, List, Optional
-import OpenSSL
+from typing import Any, cast, Dict, List, Optional
 from OpenSSL import crypto
 
 
@@ -67,16 +66,16 @@ class ProvisioningProfile:
 
         raise Exception("Unable to determine provisioning profile type")
 
-    def developer_certificates(self) -> List[OpenSSL.crypto.X509]:
+    def developer_certificates(self) -> List[crypto.X509]:
         """Returns developer certificates as a list of PyOpenSSL X509."""
-        dev_certs: List[OpenSSL.crypto.X509] = []
+        dev_certs: List[crypto.X509] = []
         raw_cert_items: List[str] = cast(
             List[str], self._contents.get("DeveloperCertificates", [])
         )
 
         for cert_item in raw_cert_items:
-            loaded_cert: OpenSSL.crypto.X509 = OpenSSL.crypto.load_certificate(
-                OpenSSL.crypto.FILETYPE_ASN1, cert_item.encode()
+            loaded_cert: crypto.X509 = crypto.load_certificate(
+                crypto.FILETYPE_ASN1, cert_item.encode()
             )
             dev_certs.append(loaded_cert)
 
