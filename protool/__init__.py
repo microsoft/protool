@@ -14,6 +14,7 @@ import sys
 import tempfile
 from typing import Any, cast, Dict, Iterable, List, Optional
 import OpenSSL
+from OpenSSL import crypto
 
 
 class ProvisioningType(Enum):
