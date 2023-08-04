@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "protool"
-version = "1.1.2"
+version = "2.0.0"
 description = "A tool for dealing with provisioning profiles"
 
 license = "MIT"
@@ -22,7 +22,10 @@ classifiers = [
     'Environment :: MacOS X',
     'Intended Audience :: Developers',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'Topic :: Software Development',
     'Topic :: Utilities'
 ]
@@ -31,16 +34,17 @@ classifiers = [
 protool = 'protool:command_line.run'
 
 [tool.poetry.dependencies]
-python = "^3.7.2"
-pyOpenSSL =">=21.0.0"
+python = "^3.8"
+pyOpenSSL ="^23.2.0"
 
 [tool.poetry.dev-dependencies]
-black = "=23.1.0"
-mypy = "=1.0.1"
-pylint = "=2.16.2"
-pytest = "=7.2.1"
-pytest-cov = "=4.0.0"
+black = "^23.7.0"
+mypy = "^1.4.1"
+pylint = "^2.17.5"
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+types-pyOpenSSL = "^23.2.0.2"
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
