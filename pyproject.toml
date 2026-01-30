@@ -1,20 +1,25 @@
 [tool.poetry]
 name = "protool"
-version = "2.0.0"
+version = "3.0.0"
 description = "A tool for dealing with provisioning profiles"
 
 license = "MIT"
 
-authors = [
-    "Dale Myers <dalemy@microsoft.com>"
-]
+authors = ["Dale Myers <dalemy@microsoft.com>"]
 
 readme = 'README.md'
 
 repository = "https://github.com/Microsoft/protool"
 homepage = "https://github.com/Microsoft/protool"
 
-keywords = ['provisioning', 'profiles', 'apple', 'ios', 'xcode', 'mobileprovision']
+keywords = [
+    'provisioning',
+    'profiles',
+    'apple',
+    'ios',
+    'xcode',
+    'mobileprovision',
+]
 
 classifiers = [
     'Development Status :: 3 - Alpha',
@@ -27,23 +32,23 @@ classifiers = [
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Topic :: Software Development',
-    'Topic :: Utilities'
+    'Topic :: Utilities',
 ]
 
 [tool.poetry.scripts]
 protool = 'protool:command_line.run'
 
 [tool.poetry.dependencies]
-python = "^3.8"
-pyOpenSSL ="^23.2.0"
+python = "^3.11"
+pyOpenSSL = "^25.1.0"
 
 [tool.poetry.dev-dependencies]
-black = "^23.7.0"
-mypy = "^1.4.1"
-pylint = "^2.17.5"
-pytest = "^7.4.0"
-pytest-cov = "^4.1.0"
-types-pyOpenSSL = "^23.2.0.2"
+black = "^26.1.0"
+mypy = "^1.19.1"
+pylint = "^4.0.4"
+pytest = "^9.0.2"
+pytest-cov = "^7.0.0"
+types-pyOpenSSL = "^24.1.0.20240722"
 
 [build-system]
 requires = ["poetry-core"]
