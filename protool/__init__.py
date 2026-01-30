@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Any, cast, Dict, List, Optional
+from typing import Any, cast
 from OpenSSL import crypto
 
 
@@ -32,22 +32,22 @@ class ProvisioningProfile:
     file_path: str
     file_name: str
     xml: str
-    _contents: Dict[str, Any]
+    _contents: dict[str, Any]
 
-    app_id_name: Optional[str]
-    application_identifier_prefix: Optional[str]
-    creation_date: Optional[datetime.datetime]
-    platform: Optional[List[str]]
-    entitlements: Dict[str, Any]
-    expiration_date: Optional[datetime.datetime]
-    name: Optional[str]
-    team_identifier: Optional[List[str]]
-    team_name: Optional[str]
-    time_to_live: Optional[int]
-    uuid: Optional[str]
-    version: Optional[int]
-    provisioned_devices: Optional[List[str]]
-    provisions_all_devices: Optional[bool]
+    app_id_name: str | None
+    application_identifier_prefix: str | None
+    creation_date: datetime.datetime | None
+    platform: list[str] | None
+    entitlements: dict[str, Any]
+    expiration_date: datetime.datetime | None
+    name: str | None
+    team_identifier: list[str] | None
+    team_name: str | None
+    time_to_live: int | None
+    uuid: str | None
+    version: int | None
+    provisioned_devices: list[str] | None
+    provisions_all_devices: bool | None
 
     @property
     def profile_type(self) -> ProvisioningType:
@@ -66,11 +66,11 @@ class ProvisioningProfile:
 
         raise Exception("Unable to determine provisioning profile type")
 
-    def developer_certificates(self) -> List[crypto.X509]:
+    def developer_certificates(self) -> list[crypto.X509]:
         """Returns developer certificates as a list of PyOpenSSL X509."""
-        dev_certs: List[crypto.X509] = []
-        raw_cert_items: List[str] = cast(
-            List[str], self._contents.get("DeveloperCertificates", [])
+        dev_certs: list[crypto.X509] = []
+        raw_cert_items: list[str] = cast(
+            list[str], self._contents.get("DeveloperCertificates", [])
         )
 
         for cert_item in raw_cert_items:
@@ -96,7 +96,7 @@ class ProvisioningProfile:
 
         self._parse_contents()
 
-    def contents(self) -> Dict[str, Any]:
+    def contents(self) -> dict[str, Any]:
         """Return a copy of the content dict."""
         return copy.deepcopy(self._contents)
 
@@ -133,7 +133,7 @@ class ProvisioningProfile:
 # pylint: enable=too-many-instance-attributes
 
 
-def profiles(profiles_dir: Optional[str] = None) -> List[ProvisioningProfile]:
+def profiles(profiles_dir: str | None = None) -> list[ProvisioningProfile]:
     """Returns a list of all currently installed provisioning profiles."""
     if profiles_dir:
         dir_path = os.path.expanduser(profiles_dir)
@@ -143,7 +143,7 @@ def profiles(profiles_dir: Optional[str] = None) -> List[ProvisioningProfile]:
             user_path, "Library", "MobileDevice", "Provisioning Profiles"
         )
 
-    all_profiles = []
+    all_profiles: list[ProvisioningProfile] = []
     for profile in os.listdir(dir_path):
         full_path = os.path.join(dir_path, profile)
         _, ext = os.path.splitext(full_path)
@@ -159,8 +159,8 @@ def diff(
     b_path: str,
     *,
     sort_keys: bool = True,
-    ignore_keys: Optional[List[str]] = None,
-    tool_override: Optional[str] = None,
+    ignore_keys: list[str] | None = None,
+    tool_override: str | None = None,
 ) -> str:
     """Diff two provisioning profiles."""
 
@@ -223,7 +223,7 @@ def diff(
     return diff_contents
 
 
-def value_for_key(profile_path: str, key: str) -> Optional[Any]:
+def value_for_key(profile_path: str, key: str) -> Any | None:
     """Return the value for a given key"""
 
     profile = ProvisioningProfile(profile_path)
