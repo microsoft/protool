@@ -94,7 +94,9 @@ def _handle_read(args: argparse.Namespace) -> int:
 def _handle_decode(args: argparse.Namespace) -> int:
     """Handle the decode sub command."""
     try:
-        print(protool.decode(args.profile))
+        print(
+            protool.decode(args.profile, decode_certificates=args.decode_certificates)
+        )
     except Exception as ex:
         print(f"Could not decode: {ex}", file=sys.stderr)
         return 1
@@ -225,6 +227,15 @@ def _handle_arguments() -> int:
         action="store",
         required=True,
         help="The profile to read the value from",
+    )
+
+    decode_parser.add_argument(
+        "-d",
+        "--decode-certificates",
+        dest="decode_certificates",
+        action="store_true",
+        default=False,
+        help="Decode and extract certificate properties",
     )
 
     decode_parser.set_defaults(subcommand="decode")

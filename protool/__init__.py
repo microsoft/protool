@@ -16,6 +16,53 @@ from typing import Any, cast
 from OpenSSL import crypto
 
 
+def _extract_certificate_properties(cert: crypto.X509) -> dict[str, Any]:
+    """Extract key properties from an X509 certificate."""
+    subject = cert.get_subject()
+    issuer = cert.get_issuer()
+
+    # Helper to safely get X509Name components
+    def get_component(name_obj, component: str) -> str | None:
+        try:
+            return getattr(name_obj, component, None)
+        except AttributeError:
+            return None
+
+    # Parse ASN.1 TIME to ISO 8601 format
+    def parse_asn1_time(time_bytes: bytes | None) -> str | None:
+        if time_bytes is None:
+            return None
+        time_str = time_bytes.decode("utf-8")
+        # ASN.1 format: YYYYMMDDhhmmssZ
+        # Convert to ISO 8601: YYYY-MM-DDThh:mm:ssZ
+        try:
+            return f"{time_str[0:4]}-{time_str[4:6]}-{time_str[6:8]}T{time_str[8:10]}:{time_str[10:12]}:{time_str[12:14]}Z"
+        except (IndexError, ValueError):
+            return time_str  # Return as-is if parsing fails
+
+    return {
+        "CommonName": get_component(subject, "CN"),
+        "Organization": get_component(subject, "O"),
+        "OrganizationalUnit": get_component(subject, "OU"),
+        "Country": get_component(subject, "C"),
+        "IssuerCommonName": get_component(issuer, "CN"),
+        "IssuerOrganization": get_component(issuer, "O"),
+        "SerialNumber": str(
+            cert.get_serial_number()  # Other libs struggle with large integers
+        ),
+        "NotBefore": parse_asn1_time(cert.get_notBefore()),
+        "NotAfter": parse_asn1_time(cert.get_notAfter()),
+        "SignatureAlgorithm": (
+            cert.get_signature_algorithm().decode("utf-8")
+            if cert.get_signature_algorithm()
+            else None
+        ),
+        "Fingerprint": (
+            cert.digest("sha256").decode("utf-8") if hasattr(cert, "digest") else None
+        ),
+    }
+
+
 class ProvisioningType(Enum):
     """Enum representing the type of provisioning profile."""
 
@@ -33,6 +80,7 @@ class ProvisioningProfile:
     file_name: str
     xml: str
     _contents: dict[str, Any]
+    _decode_certificates: bool
 
     app_id_name: str | None
     application_identifier_prefix: str | None
@@ -69,21 +117,28 @@ class ProvisioningProfile:
     def developer_certificates(self) -> list[crypto.X509]:
         """Returns developer certificates as a list of PyOpenSSL X509."""
         dev_certs: list[crypto.X509] = []
-        raw_cert_items: list[str] = cast(
-            list[str], self._contents.get("DeveloperCertificates", [])
+        raw_cert_items: list[bytes] = cast(
+            list[bytes], self._contents.get("DeveloperCertificates", [])
         )
 
         for cert_item in raw_cert_items:
             loaded_cert: crypto.X509 = crypto.load_certificate(
-                crypto.FILETYPE_ASN1, cert_item.encode()
+                crypto.FILETYPE_ASN1, cert_item
             )
             dev_certs.append(loaded_cert)
 
         return dev_certs
 
-    def __init__(self, file_path: str, *, sort_keys: bool = True) -> None:
+    def __init__(
+        self,
+        file_path: str,
+        *,
+        sort_keys: bool = True,
+        decode_certificates: bool = False,
+    ) -> None:
         self.file_path = os.path.abspath(file_path)
         self.file_name = os.path.basename(self.file_path)
+        self._decode_certificates = decode_certificates
         self.load_from_disk(sort_keys=sort_keys)
 
     def load_from_disk(self, *, sort_keys: bool = True) -> None:
@@ -95,6 +150,15 @@ class ProvisioningProfile:
             self.xml = plistlib.dumps(self._contents, sort_keys=True).decode("utf-8")
 
         self._parse_contents()
+
+        # If we decoded certificates, we need to regenerate the XML to include them
+        if self._decode_certificates:
+            contents_copy = copy.deepcopy(self._contents)
+            del contents_copy["DeveloperCertificates"]
+            del contents_copy["DER-Encoded-Profile"]
+            self.xml = plistlib.dumps(contents_copy, sort_keys=sort_keys).decode(
+                "utf-8"
+            )
 
     def contents(self) -> dict[str, Any]:
         """Return a copy of the content dict."""
@@ -118,6 +182,19 @@ class ProvisioningProfile:
         self.version = self._contents.get("Version")
         self.provisioned_devices = self._contents.get("ProvisionedDevices")
         self.provisions_all_devices = self._contents.get("ProvisionsAllDevices", False)
+
+        # Decode certificates if requested
+        if self._decode_certificates:
+            decoded_certs: list[dict[str, Any]] = []
+            for cert in self.developer_certificates():
+                try:
+                    decoded_certs.append(_extract_certificate_properties(cert))
+                except Exception as ex:
+                    # Log error but continue with other certificates
+                    print(
+                        f"Warning: Failed to decode certificate: {ex}", file=sys.stderr
+                    )
+            self._contents["DecodedDeveloperCertificates"] = decoded_certs
 
     def _get_xml(self) -> str:
         """Load the XML contents of a provisioning profile."""
@@ -235,10 +312,10 @@ def value_for_key(profile_path: str, key: str) -> Any | None:
         return None
 
 
-def decode(profile_path: str, xml: bool = True):
+def decode(profile_path: str, xml: bool = True, *, decode_certificates: bool = False):
     """Decode a profile, returning as a dictionary if xml is set to False."""
 
-    profile = ProvisioningProfile(profile_path)
+    profile = ProvisioningProfile(profile_path, decode_certificates=decode_certificates)
 
     if xml:
         return profile.xml
