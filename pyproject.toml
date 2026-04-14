@@ -46,7 +46,7 @@ pyOpenSSL = "^25.1.0"
 black = "^26.1.0"
 mypy = "^1.19.1"
 pylint = "^4.0.4"
-pytest = "^9.0.2"
+pytest = "^9.0.3"
 pytest-cov = "^7.0.0"
 types-pyOpenSSL = "^24.1.0.20240722"
 
