@@ -44,6 +44,13 @@ Alternatively, from the command line:
     # Get the raw XML (identical to using `security cms -D -i /path/to/profile`)
     protool decode --profile /path/to/profile
 
+Custom diff commands (`tool_override` in Python or `--tool` on the command line)
+accept an executable and optional arguments, for example `--tool 'diff -u'`.
+Quote executable paths or arguments containing spaces within the command string,
+for example `--tool '"/path with spaces/diff" -u'`. Commands run directly, without
+a shell: pipes, redirection, environment-variable expansion, and command
+substitution are not supported. Profile paths are always passed as literal arguments.
+
 
 # Contributing
 

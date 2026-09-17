@@ -8,7 +8,7 @@ import copy
 import datetime
 import os
 import plistlib
-import shutil
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -201,9 +201,9 @@ class ProvisioningProfile:
         if not os.path.exists(self.file_path):
             raise Exception(f"File does not exist: {self.file_path}")
 
-        security_cmd = f'security cms -D -i "{self.file_path}" 2> /dev/null'
+        security_cmd = ["security", "cms", "-D", "-i", self.file_path]
         return subprocess.check_output(
-            security_cmd, universal_newlines=True, shell=True
+            security_cmd, universal_newlines=True, stderr=subprocess.DEVNULL
         ).strip()
 
 
@@ -239,14 +239,17 @@ def diff(
     ignore_keys: list[str] | None = None,
     tool_override: str | None = None,
 ) -> str:
-    """Diff two provisioning profiles."""
+    """Diff two provisioning profiles without shell expansion of tool_override."""
 
     # pylint: disable=too-many-locals
 
     if tool_override is None:
-        diff_tool = "opendiff"
+        diff_command = ["opendiff"]
     else:
-        diff_tool = tool_override
+        diff_command = shlex.split(tool_override)
+
+    if not diff_command or not diff_command[0]:
+        raise ValueError("Diff command must include an executable")
 
     profile_a = ProvisioningProfile(a_path, sort_keys=sort_keys)
     profile_b = ProvisioningProfile(b_path, sort_keys=sort_keys)
@@ -271,31 +274,26 @@ def diff(
         a_xml = plistlib.dumps(a_dict).decode("utf-8")
         b_xml = plistlib.dumps(b_dict).decode("utf-8")
 
-    temp_dir = tempfile.mkdtemp()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        a_temp_path = os.path.join(temp_dir, profile_a.file_name)
+        b_temp_path = os.path.join(temp_dir, profile_b.file_name)
 
-    a_temp_path = os.path.join(temp_dir, profile_a.file_name)
-    b_temp_path = os.path.join(temp_dir, profile_b.file_name)
+        with open(a_temp_path, "w", encoding="utf-8") as temp_profile:
+            temp_profile.write(a_xml)
 
-    with open(a_temp_path, "w", encoding="utf-8") as temp_profile:
-        temp_profile.write(a_xml)
+        with open(b_temp_path, "w", encoding="utf-8") as temp_profile:
+            temp_profile.write(b_xml)
 
-    with open(b_temp_path, "w", encoding="utf-8") as temp_profile:
-        temp_profile.write(b_xml)
+        diff_command.extend([a_temp_path, b_temp_path])
 
-    # We deliberately don't wrap the tool so that arguments work as well
-    diff_command = f'{diff_tool} "{a_temp_path}" "{b_temp_path}"'
-
-    try:
-        diff_contents = subprocess.check_output(
-            diff_command, universal_newlines=True, shell=True
-        ).strip()
-    except subprocess.CalledProcessError as ex:
-        # Diff tools usually return a non-0 exit code if there are differences,
-        # so we just swallow this error
-        diff_contents = ex.output
-
-    # Cleanup
-    shutil.rmtree(temp_dir)
+        try:
+            diff_contents = subprocess.check_output(
+                diff_command, universal_newlines=True
+            ).strip()
+        except subprocess.CalledProcessError as ex:
+            # Diff tools usually return a non-0 exit code if there are differences,
+            # so we just swallow this error
+            diff_contents = ex.output
 
     return diff_contents
 

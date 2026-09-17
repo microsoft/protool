@@ -131,7 +131,7 @@ def _handle_arguments() -> int:
         dest="tool",
         action="store",
         default=None,
-        help="Specify a diff command to use. It should take two file paths as the final two arguments. Defaults to opendiff",  # pylint: disable=line-too-long
+        help="Specify a diff executable with optional quoted arguments (no shell expansion). It should take two file paths as the final two arguments. Defaults to opendiff",  # pylint: disable=line-too-long
     )
 
     diff_parser.add_argument(
@@ -177,7 +177,7 @@ def _handle_arguments() -> int:
         dest="tool",
         action="store",
         default=None,
-        help="Specify a diff command to use. It should take two file paths as the final two arguments. Defaults to opendiff",  # pylint: disable=line-too-long
+        help="Specify a diff executable with optional quoted arguments (no shell expansion). It should take two file paths as the final two arguments. Defaults to opendiff",  # pylint: disable=line-too-long
     )
 
     gitdiff_parser.add_argument(
